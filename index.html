@@ -125,8 +125,21 @@
         };
 
         const fullSalaryData = { ...baseSalaryData };
+        // 근가 1호봉(41)부터 근가 10호봉(50)까지 명시적 지정
+        const geungaSalary = {
+            41: 6286700, // 근가 1
+            42: 6367700, // 근가 2
+            43: 6448700, // 근가 3
+            44: 6529700, // 근가 4
+            45: 6610700, // 근가 5
+            46: 6691700, // 근가 6
+            47: 6772700, // 근가 7
+            48: 6853700, // 근가 8
+            49: 6934700, // 근가 9
+            50: 7015700  // 근가 10
+        };
         for (let i = 41; i <= 50; i++) {
-            fullSalaryData[i] = baseSalaryData[40] + ((i - 40) * 74100);
+            fullSalaryData[i] = geungaSalary[i];
         }
 
         let currentCalculation = null;
