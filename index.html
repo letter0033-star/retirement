@@ -68,6 +68,19 @@
                     <div class="flex justify-between"><span class="text-slate-500">지급배수:</span> <span id="resMult" class="font-medium"></span></div>
                 </div>
             </div>
+            
+            <!-- 계산식 및 근거 추가 -->
+            <div class="mt-4 p-3 bg-white rounded-lg border border-blue-100 text-xs text-slate-600 space-y-1.5">
+                <p class="font-semibold text-slate-700">💡 계산 공식 및 산출 근거</p>
+                <div id="resFormula" class="font-mono text-slate-800 bg-slate-50 p-2 rounded border border-slate-100 overflow-x-auto"></div>
+                <ul class="list-disc pl-4 space-y-0.5 text-slate-500">
+                    <li>산식: 월봉급액(호봉봉급) × 68% × 1/2 × 지급배수</li>
+                    <li>지급배수: 5년(60개월) 이하는 잔여개월수 전체, 5년 초과 10년(120개월) 이하는 <code class="bg-slate-100 px-1 rounded text-red-600">60 + (잔여개월 - 60) / 2</code></li>
+                    <li>10년(120개월)을 초과하는 잔여기간에 대해서는 수당을 가산하지 않음 (최대 10년 제한)</li>
+                    <li>원 단위는 절사하여 10원 단위로 계산합니다.</li>
+                </ul>
+            </div>
+
             <div class="mt-4 pt-4 border-t border-blue-200 flex justify-between items-center">
                 <span class="text-lg font-bold text-slate-800">예상 수당액</span>
                 <span id="resTotal" class="text-2xl font-extrabold text-blue-700"></span>
@@ -182,10 +195,17 @@
                 return;
             }
 
+            // 10년(120개월) 초과 시 10년으로 제한
+            let calcMonths = diffMonths;
+            let displayNote = "";
+            if (diffMonths > 120) {
+                calcMonths = 120;
+                displayNote = " (10년 초과 제한 적용)";
+            }
+
             let multiplier = 0;
-            if (diffMonths <= 60) multiplier = diffMonths;
-            else if (diffMonths <= 120) multiplier = 60 + (diffMonths - 60) / 2;
-            else multiplier = 90 + (diffMonths - 120);
+            if (calcMonths <= 60) multiplier = calcMonths;
+            else multiplier = 60 + (calcMonths - 60) / 2;
 
             const totalAmount = Math.floor((baseSalary * 0.68 / 2) * multiplier / 10) * 10;
 
@@ -194,16 +214,29 @@
                 base: baseSalary,
                 date: `${year}-${month.toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`,
                 months: diffMonths,
+                calcMonths: calcMonths,
                 multiplier: multiplier,
-                total: totalAmount
+                total: totalAmount,
+                displayNote: displayNote
             };
 
             // 요약 표시
             document.getElementById('resBase').innerText = baseSalary.toLocaleString() + "원";
             document.getElementById('resDate').innerText = currentCalculation.date;
-            document.getElementById('resMonths').innerText = diffMonths + "개월";
+            document.getElementById('resMonths').innerText = diffMonths + "개월" + displayNote;
             document.getElementById('resMult').innerText = multiplier.toFixed(1);
             document.getElementById('resTotal').innerText = totalAmount.toLocaleString() + "원";
+
+            // 상세 수식 표시
+            let formulaHTML = "";
+            if (diffMonths <= 60) {
+                formulaHTML = `${baseSalary.toLocaleString()}원 × 68% × 1/2 × ${multiplier}배수 = <b>${totalAmount.toLocaleString()}원</b>`;
+            } else if (diffMonths <= 120) {
+                formulaHTML = `${baseSalary.toLocaleString()}원 × 68% × 1/2 × [60 + (${diffMonths} - 60) / 2]배수<br>= ${baseSalary.toLocaleString()}원 × 68% × 1/2 × ${multiplier}배수 = <b>${totalAmount.toLocaleString()}원</b>`;
+            } else {
+                formulaHTML = `[10년 초과 제한] 잔여 ${diffMonths}개월 → 120개월 적용<br>${baseSalary.toLocaleString()}원 × 68% × 1/2 × [60 + (120 - 60) / 2]배수<br>= ${baseSalary.toLocaleString()}원 × 68% × 1/2 × ${multiplier}배수 = <b>${totalAmount.toLocaleString()}원</b>`;
+            }
+            document.getElementById('resFormula').innerHTML = formulaHTML;
             
             document.getElementById('resultCard').classList.remove('hidden');
             document.getElementById('saveBtn').disabled = false;
@@ -219,7 +252,7 @@
             row.innerHTML = `
                 <td class="font-medium">${currentCalculation.step}호봉</td>
                 <td>${currentCalculation.date}</td>
-                <td>${currentCalculation.months}</td>
+                <td>${currentCalculation.months}개월${currentCalculation.displayNote ? '<br><span class="text-[10px] text-red-500">10년제한</span>' : ''}</td>
                 <td>${currentCalculation.multiplier.toFixed(1)}</td>
                 <td class="text-right font-bold text-blue-700">${currentCalculation.total.toLocaleString()}원</td>
             `;
