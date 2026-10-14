@@ -1,293 +1,474 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>명예퇴직수당 모의계산</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
-        .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1rem; }
-        .table-container { overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; }
-        th { background-color: #f1f5f9; font-weight: 600; text-align: left; padding: 12px; border-bottom: 2px solid #e2e8f0; }
-        td { padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2027년 2월말 명예퇴직수당 계산기</title>
+<style>
+  :root{
+    --bg:#f5f7fa; --card:#ffffff; --ink:#1e293b; --sub:#64748b; --line:#e2e8f0;
+    --accent:#1d4ed8; --accent-soft:#eff6ff; --accent-line:#bfdbfe;
+    --warn:#b91c1c; --warn-soft:#fef2f2; --ok:#047857; --ok-soft:#ecfdf5;
+    --code:#f1f5f9;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Pretendard,"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    line-height:1.6;font-size:15px;word-break:keep-all}
+  .wrap{max-width:820px;margin:0 auto;padding:24px 16px 48px}
+  header{text-align:center;margin-bottom:24px}
+  header h1{font-size:1.6rem;margin:0 0 4px}
+  header p{margin:0;color:var(--sub);font-size:.9rem}
+  .badge{display:inline-block;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent-line);
+    border-radius:999px;padding:2px 12px;font-size:.8rem;font-weight:600;margin-top:8px}
+  .tabs{display:flex;gap:6px;margin-bottom:16px;border-bottom:2px solid var(--line)}
+  .tab{border:none;background:none;padding:10px 16px;font:inherit;font-weight:600;color:var(--sub);cursor:pointer;
+    border-bottom:3px solid transparent;margin-bottom:-2px}
+  .tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+  .card h2{font-size:1.1rem;margin:0 0 14px}
+  .card h3{font-size:1rem;margin:18px 0 8px}
+  label.lb{display:block;font-weight:600;font-size:.9rem;margin-bottom:6px}
+  .hint{color:var(--sub);font-size:.8rem;margin-top:4px}
+  select,input{font:inherit;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;width:100%;color:var(--ink)}
+  select:focus,input:focus{outline:2px solid var(--accent-line);border-color:var(--accent)}
+  .row{display:grid;gap:8px}
+  .r2{grid-template-columns:1fr 1fr}
+  .field{margin-bottom:16px}
+  details{background:#f8fafc;border:1px dashed #cbd5e1;border-radius:8px;padding:10px 12px;margin-top:8px}
+  summary{cursor:pointer;font-size:.85rem;color:var(--accent);font-weight:600}
+  .btn{font:inherit;font-weight:700;border:none;border-radius:8px;padding:10px 16px;cursor:pointer}
+  .btn-p{background:var(--accent);color:#fff}
+  .btn-p:hover{background:#1e40af}
+  .btn-s{background:#fff;border:1px solid #cbd5e1;color:var(--ink)}
+  .btn-s:hover{background:#f1f5f9}
+  .btn:disabled{opacity:.6;cursor:default}
+  .result-top{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:8px;
+    border-bottom:1px solid var(--accent-line);padding-bottom:12px;margin-bottom:14px}
+  .amount{font-size:2rem;font-weight:800;color:var(--accent);line-height:1.2}
+  .amount small{font-size:1rem;font-weight:600}
+  .res{background:var(--accent-soft);border-color:var(--accent-line)}
+  .steps{list-style:none;padding:0;margin:0;counter-reset:s}
+  .steps li{position:relative;padding:10px 12px 10px 44px;background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:8px}
+  .steps li::before{counter-increment:s;content:counter(s);position:absolute;left:12px;top:11px;width:22px;height:22px;
+    border-radius:50%;background:var(--accent);color:#fff;font-size:.8rem;font-weight:700;display:flex;align-items:center;justify-content:center}
+  .steps .t{font-weight:700;font-size:.9rem}
+  .steps .f{font-family:Consolas,"D2Coding",monospace;background:var(--code);border-radius:6px;padding:4px 8px;margin-top:4px;
+    font-size:.85rem;overflow-x:auto;white-space:nowrap}
+  .steps .n{color:var(--sub);font-size:.8rem;margin-top:2px}
+  .alert{border-radius:10px;padding:12px 14px;font-size:.9rem;margin-bottom:12px}
+  .alert.warn{background:var(--warn-soft);color:var(--warn);border:1px solid #fecaca}
+  .alert.ok{background:var(--ok-soft);color:var(--ok);border:1px solid #a7f3d0}
+  .form-box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:12px}
+  .form-box .k{color:var(--sub);font-size:.8rem}
+  .form-box .v{font-family:Consolas,"D2Coding",monospace;font-size:.9rem}
+  table{width:100%;border-collapse:collapse;font-size:.88rem}
+  th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left}
+  th{background:#f8fafc;font-weight:600;font-size:.8rem;color:var(--sub)}
+  td.num,th.num{text-align:right}
+  .tbl{overflow-x:auto}
+  .x{background:none;border:none;color:var(--sub);cursor:pointer;font-size:1rem}
+  .x:hover{color:var(--warn)}
+  .tier td:first-child{font-weight:600;white-space:nowrap}
+  .hl{background:#fef9c3}
+  .chart{width:100%;height:auto;display:block;margin-top:8px}
+  .muted{color:var(--sub);font-size:.85rem}
+  ul.tight{margin:6px 0;padding-left:20px}
+  ul.tight li{margin-bottom:4px}
+  footer{color:var(--sub);font-size:.78rem;text-align:center;margin-top:24px}
+  .hidden{display:none}
+  @media (max-width:560px){ .amount{font-size:1.6rem} .r2{grid-template-columns:1fr} }
+  @media print{ .tabs,.no-print{display:none} body{background:#fff} .card{break-inside:avoid} }
+</style>
 </head>
-<body class="p-4 md:p-8">
-    <div class="max-w-3xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-2xl font-bold text-slate-800">명예퇴직수당 모의 계산기</h1>
-            <p class="text-slate-500 mt-2">2026년 8월말 강원특별자치도교육청 공고 기준</p>
-        </header>
+<body>
+<div class="wrap">
+  <header>
+    <h1>명예퇴직수당 모의 계산기</h1>
+    <p>강원특별자치도교육청 공고 제2026-133호 · 2027년 2월말 명예퇴직</p>
+    <span class="badge">명예퇴직 예정일 2027. 2. 28. 기준</span>
+  </header>
 
-        <div class="card p-6 mb-8">
-            <div class="grid grid-cols-1 gap-6">
-                <!-- 호봉 선택 -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">퇴직시 호봉 (2026.8.31. 기준)</label>
-                    <select id="salaryStep" class="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></select>
-                </div>
+  <nav class="tabs no-print">
+    <button class="tab on" data-tab="calc">계산하기</button>
+    <button class="tab" data-tab="guide">계산 방법 안내</button>
+  </nav>
 
-                <!-- 정년 예정일 -->
-                <div>
-                    <label class="block text-sm font-semibold text-slate-700 mb-2">정년 예정일</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <select id="retireYear" class="p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></select>
-                        <select id="retireMonth" class="p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></select>
-                        <select id="retireDay" class="p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></select>
-                    </div>
-                </div>
+  <!-- ===================== 계산 탭 ===================== -->
+  <section id="tab-calc">
+    <div class="card">
+      <h2>정보 입력</h2>
 
-                <div class="flex flex-col gap-3">
-                    <button onclick="calculate()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-colors">
-                        수당 계산하기
-                    </button>
-                </div>
-            </div>
+      <div class="field">
+        <label class="lb" for="step">퇴직 시 호봉 (2027. 2. 28. 기준)</label>
+        <select id="step"></select>
+        <div class="hint">2027년 2월 28일에 받게 될 호봉을 고르세요. 휴직 기간에는 정기승급이 되지 않습니다.</div>
+      </div>
+
+      <div class="field">
+        <label class="lb">정년퇴직일</label>
+        <div class="row r2">
+          <select id="ry"></select>
+          <select id="rh">
+            <option value="2">2월 말일</option>
+            <option value="8">8월 31일</option>
+          </select>
         </div>
+        <div class="hint">교원은 정년(62세)에 이른 날이 속한 학기의 끝(2월 말일 또는 8월 31일)에 퇴직합니다.</div>
+        <details>
+          <summary>생년월일로 정년퇴직일 찾기 (참고용)</summary>
+          <div class="row r2" style="margin-top:8px">
+            <input type="date" id="birth" min="1955-01-01" max="1990-12-31">
+            <button class="btn btn-s" id="birthBtn" type="button">정년퇴직일 적용</button>
+          </div>
+          <div class="hint" id="birthMsg">3월 2일~9월 1일생은 8월 31일, 9월 2일~3월 1일생은 2월 말일이 정년퇴직일입니다. 생년월일은 화면에서만 쓰이고 저장되지 않습니다. 실제 정년일은 인사기록·정년 조견표로 확인하세요.</div>
+        </details>
+      </div>
 
-        <!-- 결과 요약 카드 -->
-        <div id="resultCard" class="card p-6 mb-8 hidden border-2 border-blue-100 bg-blue-50 relative">
-            <div class="flex justify-between items-start mb-4 border-b border-blue-200 pb-2">
-                <h2 class="text-lg font-bold text-blue-800">계산 상세 내역</h2>
-                <button onclick="saveResult()" id="saveBtn" class="bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold py-2 px-4 rounded-lg transition-colors">
-                    결과 저장
-                </button>
-            </div>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div class="space-y-2">
-                    <div class="flex justify-between"><span class="text-slate-500">기준 봉급:</span> <span id="resBase" class="font-medium"></span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">정년일:</span> <span id="resDate" class="font-medium"></span></div>
-                </div>
-                <div class="space-y-2">
-                    <div class="flex justify-between"><span class="text-slate-500">잔여월수:</span> <span id="resMonths" class="font-medium"></span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">지급배수:</span> <span id="resMult" class="font-medium"></span></div>
-                </div>
-            </div>
-            
-            <!-- 계산식 및 근거 추가 -->
-            <div class="mt-4 p-3 bg-white rounded-lg border border-blue-100 text-xs text-slate-600 space-y-1.5">
-                <p class="font-semibold text-slate-700">💡 계산 공식 및 산출 근거</p>
-                <div id="resFormula" class="font-mono text-slate-800 bg-slate-50 p-2 rounded border border-slate-100 overflow-x-auto"></div>
-                <ul class="list-disc pl-4 space-y-0.5 text-slate-500">
-                    <li>산식: 월봉급액(호봉봉급) × 68% × 1/2 × 지급배수</li>
-                    <li>지급배수: 5년(60개월) 이하는 잔여개월수 전체, 5년 초과 10년(120개월) 이하는 <code class="bg-slate-100 px-1 rounded text-red-600">60 + (잔여개월 - 60) / 2</code></li>
-                    <li>10년(120개월)을 초과하는 잔여기간에 대해서는 수당을 가산하지 않음 (최대 10년 제한)</li>
-                    <li>원 단위는 절사하여 10원 단위로 계산합니다.</li>
-                </ul>
-            </div>
-
-            <div class="mt-4 pt-4 border-t border-blue-200 flex justify-between items-center">
-                <span class="text-lg font-bold text-slate-800">예상 수당액</span>
-                <span id="resTotal" class="text-2xl font-extrabold text-blue-700"></span>
-            </div>
+      <div class="field" style="margin-bottom:0">
+        <label class="lb">근속기간 (2027. 2. 28. 기준, 선택 입력)</label>
+        <div class="row r2">
+          <input type="number" id="sy" min="0" max="50" placeholder="년" inputmode="numeric">
+          <input type="number" id="sm" min="0" max="11" placeholder="월" inputmode="numeric">
         </div>
-
-        <!-- 저장 목록 -->
-        <div id="listSection" class="card p-6 hidden">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-slate-800">저장된 계산 목록</h2>
-                <button onclick="clearList()" class="text-sm text-red-500 hover:underline">목록 전체 삭제</button>
-            </div>
-            <div class="table-container">
-                <table id="resultTable">
-                    <thead>
-                        <tr>
-                            <th class="text-xs">호봉</th>
-                            <th class="text-xs">정년일</th>
-                            <th class="text-xs">잔여(월)</th>
-                            <th class="text-xs">지급배수</th>
-                            <th class="text-xs text-right">수당액</th>
-                        </tr>
-                    </thead>
-                    <tbody id="listBody" class="text-sm">
-                        <!-- 데이터 삽입 영역 -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <div class="hint">「공무원연금법」 제25조의 재직기간(연금가입내역서)입니다. 입력하면 20년 이상 요건을 함께 확인합니다.</div>
+      </div>
     </div>
 
-    <script>
-        const baseSalaryData = {
-            1: 2041500, 2: 2103300, 3: 2166000, 4: 2228500, 5: 2291500,
-            6: 2354400, 7: 2416600, 8: 2478600, 9: 2495600, 10: 2516700,
-            11: 2538300, 12: 2585900, 13: 2657500, 14: 2773700, 15: 2889700,
-            16: 3006200, 17: 3121000, 18: 3241500, 19: 3361200, 20: 3481000,
-            21: 3600700, 22: 3733600, 23: 3865300, 24: 3997500, 25: 4129400,
-            26: 4261900, 27: 4400100, 28: 4538000, 29: 4682100, 30: 4826800,
-            31: 4971100, 32: 5115200, 33: 5261600, 34: 5407500, 35: 5553600,
-            36: 5699100, 37: 5825700, 38: 5952500, 39: 6079500, 40: 6205700
-        };
+    <div class="card res" id="resultCard">
+      <div id="alerts"></div>
+      <div class="result-top">
+        <div>
+          <div class="muted">예상 명예퇴직수당</div>
+          <div class="amount" id="total">-</div>
+        </div>
+        <button class="btn btn-p no-print" id="saveBtn" type="button">비교 목록에 담기</button>
+      </div>
 
-        const fullSalaryData = { ...baseSalaryData };
-        // 근가 1호봉(41)부터 근가 10호봉(50)까지 명시적 지정
-        const geungaSalary = {
-            41: 6286700, // 근가 1
-            42: 6367700, // 근가 2
-            43: 6448700, // 근가 3
-            44: 6529700, // 근가 4
-            45: 6610700, // 근가 5
-            46: 6691700, // 근가 6
-            47: 6772700, // 근가 7
-            48: 6853700, // 근가 8
-            49: 6934700, // 근가 9
-            50: 7015700  // 근가 10
-        };
-        for (let i = 41; i <= 50; i++) {
-            fullSalaryData[i] = geungaSalary[i];
-        }
+      <ol class="steps" id="steps"></ol>
 
-        let currentCalculation = null;
+      <div class="form-box" id="formBox">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+          <strong style="font-size:.9rem">명예퇴직수당 지급신청서 기재 예시</strong>
+          <button class="btn btn-s no-print" id="copyBtn" type="button" style="padding:6px 10px;font-size:.8rem">산출내용 복사</button>
+        </div>
+        <div style="margin-top:8px"><span class="k">⑮ 정년잔여기간 (수당지급대상 기간)</span><br><span class="v" id="f15">-</span></div>
+        <div style="margin-top:6px"><span class="k">⑯ 수당청구액 및 산출내용</span><br><span class="v" id="f16">-</span></div>
+      </div>
+    </div>
 
-        window.onload = function() {
-            const salarySelect = document.getElementById('salaryStep');
-            for (let step = 50; step >= 1; step--) {
-                const option = document.createElement('option');
-                option.value = step;
-                option.text = `${step}호봉${step > 40 ? ` (근가 ${step-40})` : ""} - ${fullSalaryData[step].toLocaleString()}원`;
-                if(step === 40) option.selected = true;
-                salarySelect.appendChild(option);
-            }
+    <div class="card hidden" id="listCard">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <h2 style="margin:0">비교 목록</h2>
+        <button class="btn btn-s no-print" id="clearBtn" type="button" style="padding:6px 10px;font-size:.8rem">모두 지우기</button>
+      </div>
+      <div class="tbl">
+        <table>
+          <thead><tr><th>호봉</th><th>정년퇴직일</th><th class="num">잔여(월)</th><th class="num">지급배수</th><th class="num">수당액</th><th class="no-print"></th></tr></thead>
+          <tbody id="listBody"></tbody>
+        </table>
+      </div>
+      <div class="hint">목록은 이 화면에만 있고, 페이지를 닫으면 사라집니다.</div>
+    </div>
+  </section>
 
-            const yearSelect = document.getElementById('retireYear');
-            for (let y = 2027; y <= 2050; y++) {
-                const option = document.createElement('option');
-                option.value = y; option.text = `${y}년`;
-                if(y === 2031) option.selected = true;
-                yearSelect.appendChild(option);
-            }
+  <!-- ===================== 안내 탭 ===================== -->
+  <section id="tab-guide" class="hidden">
+    <div class="card">
+      <h2>명예퇴직수당은 이렇게 계산합니다</h2>
+      <p style="margin-top:0">한 줄로 쓰면 다음과 같습니다.</p>
+      <div class="steps"><div class="f" style="font-size:.95rem;padding:10px 12px;white-space:normal">
+        명예퇴직수당 = { 봉급액 × 68% ÷ 2 } × 지급배수 &nbsp;(10원 미만 절사)</div></div>
+      <p class="muted">봉급액은 2027. 2. 28. 호봉의 봉급표 금액이고, 지급배수는 정년까지 남은 개월 수로 정합니다. 아래 세 단계로 나누어 보겠습니다.</p>
 
-            const monthSelect = document.getElementById('retireMonth');
-            for (let m = 1; m <= 12; m++) {
-                const option = document.createElement('option');
-                option.value = m; option.text = `${m}월`;
-                if(m === 8) option.selected = true;
-                monthSelect.appendChild(option);
-            }
+      <h3>1단계 · 정년잔여월수 세기</h3>
+      <p style="margin:0">명예퇴직 예정일 <b>다음 달 1일(2027. 3. 1.)부터 정년퇴직일까지</b>의 개월 수입니다.</p>
+      <ul class="tight">
+        <li>정년퇴직일 2033. 2. 28. → 2027년 3월 ~ 2033년 2월 = <b>72개월</b></li>
+        <li>정년퇴직일 2032. 8. 31. → 2027년 3월 ~ 2032년 8월 = <b>66개월</b></li>
+        <li>정년잔여월수가 <b>12개월 미만</b>이면 명예퇴직 대상이 아닙니다.</li>
+      </ul>
 
-            updateDays();
-            yearSelect.onchange = updateDays;
-            monthSelect.onchange = updateDays;
-        };
+      <h3>2단계 · 지급배수 정하기</h3>
+      <p style="margin:0 0 8px">남은 기간이 길수록 배수가 늘지만, 5년을 넘는 부분은 절반만 인정하고 10년을 넘는 부분은 인정하지 않습니다.</p>
+      <div class="tbl">
+        <table class="tier">
+          <thead><tr><th>정년잔여월수</th><th>지급배수</th><th>예시</th></tr></thead>
+          <tbody>
+            <tr><td>12 ~ 60개월<br><span class="muted">(1년 이상 5년 이내)</span></td><td>잔여월수 그대로</td><td>48개월 → 48</td></tr>
+            <tr><td>61 ~ 120개월<br><span class="muted">(5년 초과 10년 이내)</span></td><td>60 + (잔여월수 − 60) ÷ 2</td><td>72개월 → 60 + 6 = 66<br>67개월 → 60 + 3.5 = 63.5</td></tr>
+            <tr><td>121개월 이상<br><span class="muted">(10년 초과)</span></td><td>90 (상한)</td><td>150개월 → 90</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <svg class="chart" id="chart" viewBox="0 0 640 260" role="img" aria-label="정년잔여월수에 따른 지급배수 그래프"></svg>
+      <p class="muted" style="margin-top:4px">그래프의 점은 '계산하기' 탭에서 입력한 내 위치입니다.</p>
 
-        function updateDays() {
-            const year = parseInt(document.getElementById('retireYear').value);
-            const month = parseInt(document.getElementById('retireMonth').value);
-            const daySelect = document.getElementById('retireDay');
-            const lastDay = new Date(year, month, 0).getDate();
-            const prevValue = daySelect.value;
-            daySelect.innerHTML = '';
-            for (let d = 1; d <= lastDay; d++) {
-                const option = document.createElement('option');
-                option.value = d; option.text = `${d}일`;
-                if ((month === 8 && d === 31) || (month === 2 && d === lastDay)) option.selected = true;
-                else if (d == prevValue) option.selected = true;
-                daySelect.appendChild(option);
-            }
-        }
+      <h3>3단계 · 금액 계산하기</h3>
+      <ul class="tight">
+        <li><b>월봉급액</b>: 봉급표의 봉급액 × 68% (호봉제 공무원은 봉급표 금액의 68%를 월봉급액으로 봅니다)</li>
+        <li><b>그 반액</b>: 월봉급액 ÷ 2 (= 봉급액의 34%)</li>
+        <li><b>수당</b>: 반액 × 지급배수, 10원 미만은 버립니다(원 단위 절사).</li>
+      </ul>
 
-        function calculate() {
-            const step = document.getElementById('salaryStep').value;
-            const year = document.getElementById('retireYear').value;
-            const month = document.getElementById('retireMonth').value;
-            const day = document.getElementById('retireDay').value;
+      <h3>계산 예시 (교육청 작성 안내 예시)</h3>
+      <p style="margin:0">42호봉(근가 2), 정년퇴직일 2033. 2. 28.인 경우</p>
+      <ol class="steps" style="margin-top:8px">
+        <li><div class="t">정년잔여월수</div><div class="f">2027. 3. ~ 2033. 2. = 72개월</div></li>
+        <li><div class="t">지급배수</div><div class="f">60 + (72 − 60) ÷ 2 = 66</div></li>
+        <li><div class="t">월봉급액의 반액</div><div class="f">6,367,700원 × 0.68 ÷ 2 = 2,165,018원</div></li>
+        <li><div class="t">수당액</div><div class="f">2,165,018원 × 66 = 142,891,188원 → <b>142,891,180원</b></div></li>
+      </ol>
+    </div>
 
-            const baseSalary = fullSalaryData[step];
-            const endDate = new Date(year, month - 1, day);
-            const startDate = new Date("2026-08-31");
+    <div class="card">
+      <h2>신청 자격과 유의사항</h2>
+      <ul class="tight">
+        <li><b>근속 20년 이상</b>: 2027. 2. 28. 기준 「공무원연금법」 제25조 재직기간(연금가입내역서의 기본·사병·소급·합산기간)</li>
+        <li><b>정년잔여 1년 이상</b>: 2027. 2. 28. 기준 정년퇴직일까지 12개월 이상</li>
+        <li><b>호봉</b>: 2027. 2. 28. 호봉으로 계산합니다. 휴직 기간에는 정기승급이 되지 않으니 휴직 이력을 확인하세요.</li>
+        <li><b>봉급표</b>: 이 계산기는 2026년 봉급표(공무원보수규정 별표 11, 2026. 1. 2. 개정)를 씁니다. 신청 후 봉급이 인상되면 인상된 봉급표로 다시 계산해 지급합니다.</li>
+        <li><b>근속가봉</b>: 40호봉을 넘으면 1회당 81,000원씩, 최대 10회(근가 10)까지 더합니다.</li>
+        <li><b>신청 기간</b>: 2026. 11. 9.(월) ~ 11. 13.(금). 기간이 지나면 추가 신청을 받지 않습니다.</li>
+        <li><b>지급</b>: 퇴직일 지급이 원칙이고 퇴직일로부터 30일 이내에 지급합니다.</li>
+        <li>징계·수사·기소 중인 경우 등은 대상에서 제외됩니다(공고문 2-나 참고).</li>
+      </ul>
+    </div>
 
-            let diffMonths = (endDate.getFullYear() - startDate.getFullYear()) * 12 + (endDate.getMonth() - startDate.getMonth());
-            
-            if (diffMonths < 12) {
-                alert("정년 잔여 기간이 1년 이상이어야 합니다.");
-                return;
-            }
+    <div class="card">
+      <h2>근거</h2>
+      <ul class="tight muted">
+        <li>「국가공무원 명예퇴직수당 등 지급 규정」 제3조, 제4조 및 [별표 1] 명예퇴직수당 지급액 산정표</li>
+        <li>「교육공무원 명예퇴직수당 지급에 관한 특례규정」(교육부훈령 제511호)</li>
+        <li>「공무원보수규정」 [별표 11] 교원 등의 봉급표, 제30조의2(근속가봉)</li>
+        <li>강원특별자치도교육청 공고 제2026-133호 및 2027년 2월말 명예퇴직 신청 행정사항</li>
+      </ul>
+    </div>
+  </section>
 
-            // 10년(120개월) 초과 시 10년으로 제한
-            let calcMonths = diffMonths;
-            let displayNote = "";
-            if (diffMonths > 120) {
-                calcMonths = 120;
-                displayNote = " (10년 초과 제한 적용)";
-            }
+  <footer>
+    모의 계산 결과이며, 최종 지급 여부와 금액은 교육청 인사위원회 심사와 예산 범위에서 결정됩니다.<br>
+    입력한 정보는 이 화면에서만 계산에 쓰이며 어디에도 전송·저장되지 않습니다.
+  </footer>
+</div>
 
-            let multiplier = 0;
-            if (calcMonths <= 60) multiplier = calcMonths;
-            else multiplier = 60 + (calcMonths - 60) / 2;
+<script>
+(function(){
+  'use strict';
+  // ---- 기준값 ----
+  var BASE_Y = 2027, BASE_M = 2;           // 명예퇴직 예정일 2027. 2. 28.
+  // 공무원보수규정 [별표 11] (2026. 1. 2. 개정) 1~40호봉
+  var PAY = [0,
+    2041500,2103300,2166000,2228500,2291500,2354400,2416600,2478600,2495600,2516700,
+    2538300,2585900,2657500,2773700,2889700,3006200,3121000,3241500,3361200,3481000,
+    3600700,3733600,3865300,3997500,4129400,4261900,4400100,4538000,4682100,4826800,
+    4971100,5115200,5261600,5407500,5553600,5699100,5825700,5952500,6079500,6205700];
+  var GEUNGA = 81000; // 근속가봉 (제30조의2제2항), 최대 10회
+  for (var g = 1; g <= 10; g++) PAY[40 + g] = PAY[40] + GEUNGA * g;
 
-            const totalAmount = Math.floor((baseSalary * 0.68 / 2) * multiplier / 10) * 10;
+  var $ = function(id){ return document.getElementById(id); };
+  var won = function(n){ return n.toLocaleString('ko-KR') + '원'; };
+  var fmtMult = function(m){ return (m % 1 === 0) ? String(m) : m.toFixed(1); };
+  var lastDay = function(y, m){ return new Date(y, m, 0).getDate(); };
+  var stepLabel = function(s){ return s + '호봉' + (s > 40 ? ' (근가 ' + (s - 40) + ')' : ''); };
 
-            currentCalculation = {
-                step: step,
-                base: baseSalary,
-                date: `${year}-${month.toString().padStart(2,'0')}-${day.toString().padStart(2,'0')}`,
-                months: diffMonths,
-                calcMonths: calcMonths,
-                multiplier: multiplier,
-                total: totalAmount,
-                displayNote: displayNote
-            };
+  // ---- 입력 초기화 ----
+  var stepSel = $('step');
+  for (var s = 50; s >= 1; s--) {
+    var o = document.createElement('option');
+    o.value = s; o.textContent = stepLabel(s) + ' — ' + won(PAY[s]);
+    if (s === 40) o.selected = true;
+    stepSel.appendChild(o);
+  }
+  var ySel = $('ry');
+  for (var y = 2027; y <= 2045; y++) {
+    var oy = document.createElement('option');
+    oy.value = y; oy.textContent = y + '년';
+    if (y === 2031) oy.selected = true;
+    ySel.appendChild(oy);
+  }
+  $('rh').value = '8';
 
-            // 요약 표시
-            document.getElementById('resBase').innerText = baseSalary.toLocaleString() + "원";
-            document.getElementById('resDate').innerText = currentCalculation.date;
-            document.getElementById('resMonths').innerText = diffMonths + "개월" + displayNote;
-            document.getElementById('resMult').innerText = multiplier.toFixed(1);
-            document.getElementById('resTotal').innerText = totalAmount.toLocaleString() + "원";
+  // ---- 핵심 계산 ----
+  function compute(step, ry, rm) {
+    var months = (ry - BASE_Y) * 12 + (rm - BASE_M); // 2027.3.1 ~ 정년일
+    var tier, mult2; // mult2 = 지급배수 × 2 (정수로 다뤄 부동소수 오차 방지)
+    if (months < 12) { tier = 0; mult2 = 0; }
+    else if (months <= 60) { tier = 1; mult2 = months * 2; }
+    else if (months <= 120) { tier = 2; mult2 = 120 + (months - 60); }
+    else { tier = 3; mult2 = 180; }
+    var pay = PAY[step];
+    var half = pay / 100 * 34;                 // 봉급액 × 68% ÷ 2 (봉급액은 100원 단위라 정수)
+    var raw2 = half * mult2;                   // 수당 × 2
+    var total = Math.floor(raw2 / 20) * 10;    // ÷2 후 10원 미만 절사
+    return { step: step, pay: pay, ry: ry, rm: rm, months: months, tier: tier,
+             mult: mult2 / 2, half: half, raw: raw2 / 2, total: total };
+  }
 
-            // 상세 수식 표시
-            let formulaHTML = "";
-            if (diffMonths <= 60) {
-                formulaHTML = `${baseSalary.toLocaleString()}원 × 68% × 1/2 × ${multiplier}배수 = <b>${totalAmount.toLocaleString()}원</b>`;
-            } else if (diffMonths <= 120) {
-                formulaHTML = `${baseSalary.toLocaleString()}원 × 68% × 1/2 × [60 + (${diffMonths} - 60) / 2]배수<br>= ${baseSalary.toLocaleString()}원 × 68% × 1/2 × ${multiplier}배수 = <b>${totalAmount.toLocaleString()}원</b>`;
-            } else {
-                formulaHTML = `[10년 초과 제한] 잔여 ${diffMonths}개월 → 120개월 적용<br>${baseSalary.toLocaleString()}원 × 68% × 1/2 × [60 + (120 - 60) / 2]배수<br>= ${baseSalary.toLocaleString()}원 × 68% × 1/2 × ${multiplier}배수 = <b>${totalAmount.toLocaleString()}원</b>`;
-            }
-            document.getElementById('resFormula').innerHTML = formulaHTML;
-            
-            document.getElementById('resultCard').classList.remove('hidden');
-            document.getElementById('saveBtn').disabled = false;
-            document.getElementById('saveBtn').innerText = "결과 저장";
-            document.getElementById('saveBtn').classList.replace('bg-green-600', 'bg-slate-800');
-        }
+  var current = null;
 
-        function saveResult() {
-            if (!currentCalculation) return;
+  function render() {
+    var step = +stepSel.value, ry = +ySel.value, rm = +$('rh').value;
+    var r = compute(step, ry, rm);
+    current = r;
+    var dateStr = ry + '. ' + rm + '. ' + lastDay(ry, rm) + '.';
+    r.dateStr = dateStr;
 
-            const listBody = document.getElementById('listBody');
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="font-medium">${currentCalculation.step}호봉</td>
-                <td>${currentCalculation.date}</td>
-                <td>${currentCalculation.months}개월${currentCalculation.displayNote ? '<br><span class="text-[10px] text-red-500">10년제한</span>' : ''}</td>
-                <td>${currentCalculation.multiplier.toFixed(1)}</td>
-                <td class="text-right font-bold text-blue-700">${currentCalculation.total.toLocaleString()}원</td>
-            `;
-            
-            listBody.insertBefore(row, listBody.firstChild); // 최신 항목 위로
-            document.getElementById('listSection').classList.remove('hidden');
-            
-            // 버튼 상태 변경
-            const saveBtn = document.getElementById('saveBtn');
-            saveBtn.innerText = "저장 완료";
-            saveBtn.disabled = true;
-            saveBtn.classList.replace('bg-slate-800', 'bg-green-600');
-            
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }
+    // 경고
+    var al = [];
+    if (r.months < 12) al.push('<div class="alert warn">정년잔여월수가 ' + r.months + '개월로 1년(12개월) 미만입니다. 명예퇴직 대상이 아닙니다.</div>');
+    var sy = $('sy').value, sm = $('sm').value;
+    if (sy !== '' || sm !== '') {
+      var tot = (+sy || 0) * 12 + (+sm || 0);
+      if (tot < 240) al.push('<div class="alert warn">근속기간이 ' + (+sy||0) + '년 ' + (+sm||0) + '월로 20년 미만입니다. 명예퇴직 대상이 아닙니다.</div>');
+      else if (r.months >= 12) al.push('<div class="alert ok">근속 20년 이상, 정년잔여 1년 이상 요건을 충족합니다.</div>');
+    }
+    $('alerts').innerHTML = al.join('');
 
-        function clearList() {
-            if(confirm("저장된 목록을 모두 삭제하시겠습니까?")) {
-                document.getElementById('listBody').innerHTML = '';
-                document.getElementById('listSection').classList.add('hidden');
-            }
-        }
-    </script>
+    if (r.tier === 0) {
+      $('total').innerHTML = '대상 아님';
+      $('steps').innerHTML = '<li><div class="t">정년잔여월수</div><div class="f">2027. 3. ~ ' + ry + '. ' + rm + '. = ' + r.months + '개월</div><div class="n">12개월 이상이어야 신청할 수 있습니다.</div></li>';
+      $('f15').textContent = '-'; $('f16').textContent = '-';
+      $('saveBtn').disabled = true;
+      drawChart(r);
+      return;
+    }
+
+    $('total').innerHTML = r.total.toLocaleString('ko-KR') + '<small>원</small>';
+
+    var multF, multN;
+    if (r.tier === 1) { multF = '정년잔여월수 그대로 = ' + fmtMult(r.mult); multN = '12~60개월 구간: 남은 개월 수를 그대로 적용합니다.'; }
+    else if (r.tier === 2) { multF = '60 + (' + r.months + ' − 60) ÷ 2 = ' + fmtMult(r.mult); multN = '61~120개월 구간: 5년을 넘는 기간은 절반만 인정합니다.'; }
+    else { multF = '상한 적용 = 90 (잔여 ' + r.months + '개월 → 120개월로 계산)'; multN = '10년을 넘는 기간에는 수당을 지급하지 않습니다.'; }
+
+    var rawStr = (r.raw % 1 === 0) ? r.raw.toLocaleString('ko-KR') : r.raw.toLocaleString('ko-KR', {minimumFractionDigits:1, maximumFractionDigits:1});
+    var html = '';
+    html += '<li><div class="t">정년잔여월수</div><div class="f">2027. 3. 1. ~ ' + dateStr + ' = ' + r.months + '개월</div></li>';
+    html += '<li><div class="t">지급배수</div><div class="f">' + multF + '</div><div class="n">' + multN + '</div></li>';
+    html += '<li><div class="t">월봉급액의 반액</div><div class="f">' + won(r.pay) + ' × 0.68 ÷ 2 = ' + won(r.half) + '</div><div class="n">' + stepLabel(r.step) + ' 봉급액 기준</div></li>';
+    html += '<li><div class="t">수당액</div><div class="f">' + won(r.half) + ' × ' + fmtMult(r.mult) + ' = ' + rawStr + '원 → <b>' + won(r.total) + '</b></div><div class="n">10원 미만 절사</div></li>';
+    $('steps').innerHTML = html;
+
+    $('f15').textContent = r.months + ' 개월  ( ' + fmtMult(r.mult) + ' 개월)';
+    r.formText = '{(' + won(r.pay) + ' X 0.68) ÷ 2} X ' + fmtMult(r.mult) + ' = ' + won(r.total);
+    $('f16').textContent = r.formText;
+
+    var sb = $('saveBtn'); sb.disabled = false; sb.textContent = '비교 목록에 담기';
+    drawChart(r);
+  }
+
+  // ---- 지급배수 그래프 ----
+  function drawChart(r) {
+    var W = 640, H = 260, L = 48, R = 16, T = 16, B = 40;
+    var xMax = 180, yMax = 100;
+    var X = function(m){ return L + (m / xMax) * (W - L - R); };
+    var Y = function(v){ return H - B - (v / yMax) * (H - T - B); };
+    var multOf = function(m){ return m < 12 ? 0 : m <= 60 ? m : m <= 120 ? 60 + (m - 60) / 2 : 90; };
+    var svg = '';
+    // 격자·축
+    [0, 30, 60, 90].forEach(function(v){
+      svg += '<line x1="' + L + '" y1="' + Y(v) + '" x2="' + (W - R) + '" y2="' + Y(v) + '" stroke="#e2e8f0"/>';
+      svg += '<text x="' + (L - 8) + '" y="' + (Y(v) + 4) + '" font-size="11" fill="#64748b" text-anchor="end">' + v + '</text>';
+    });
+    [0, 12, 60, 120, 180].forEach(function(m){
+      svg += '<text x="' + X(m) + '" y="' + (H - B + 16) + '" font-size="11" fill="#64748b" text-anchor="middle">' + m + '</text>';
+    });
+    svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 6) + '" font-size="11" fill="#64748b" text-anchor="middle">정년잔여월수(개월)</text>';
+    svg += '<text x="12" y="' + (T + 6) + '" font-size="11" fill="#64748b">배수</text>';
+    // 구간 배경
+    svg += '<rect x="' + X(12) + '" y="' + T + '" width="' + (X(60) - X(12)) + '" height="' + (H - T - B) + '" fill="#eff6ff"/>';
+    svg += '<rect x="' + X(60) + '" y="' + T + '" width="' + (X(120) - X(60)) + '" height="' + (H - T - B) + '" fill="#f5f3ff"/>';
+    svg += '<rect x="' + X(120) + '" y="' + T + '" width="' + (X(180) - X(120)) + '" height="' + (H - T - B) + '" fill="#f8fafc"/>';
+    svg += '<text x="' + ((X(12) + X(60)) / 2) + '" y="' + (T + 14) + '" font-size="11" fill="#1d4ed8" text-anchor="middle">잔여월수 그대로</text>';
+    svg += '<text x="' + ((X(60) + X(120)) / 2) + '" y="' + (T + 14) + '" font-size="11" fill="#6d28d9" text-anchor="middle">초과분 절반 인정</text>';
+    svg += '<text x="' + ((X(120) + X(180)) / 2) + '" y="' + (T + 14) + '" font-size="11" fill="#475569" text-anchor="middle">90 고정</text>';
+    // 선
+    svg += '<polyline fill="none" stroke="#1d4ed8" stroke-width="2.5" points="' +
+      X(12) + ',' + Y(12) + ' ' + X(60) + ',' + Y(60) + ' ' + X(120) + ',' + Y(90) + ' ' + X(180) + ',' + Y(90) + '"/>';
+    svg += '<line x1="' + L + '" y1="' + (H - B) + '" x2="' + (W - R) + '" y2="' + (H - B) + '" stroke="#94a3b8"/>';
+    // 내 위치
+    if (r && r.months >= 12) {
+      var m = Math.min(r.months, xMax), v = multOf(r.months);
+      svg += '<line x1="' + X(m) + '" y1="' + Y(v) + '" x2="' + X(m) + '" y2="' + (H - B) + '" stroke="#ef4444" stroke-dasharray="3 3"/>';
+      svg += '<circle cx="' + X(m) + '" cy="' + Y(v) + '" r="6" fill="#ef4444" stroke="#fff" stroke-width="2"/>';
+      var tx = X(m) > W - 140 ? X(m) - 10 : X(m) + 10, anc = X(m) > W - 140 ? 'end' : 'start';
+      svg += '<text x="' + tx + '" y="' + (Y(v) - 10) + '" font-size="12" font-weight="700" fill="#b91c1c" text-anchor="' + anc + '">내 위치: ' + r.months + '개월 → ' + fmtMult(v) + '</text>';
+    }
+    $('chart').innerHTML = svg;
+  }
+
+  // ---- 생년월일 → 정년퇴직일 ----
+  $('birthBtn').addEventListener('click', function(){
+    var v = $('birth').value;
+    if (!v) { $('birthMsg').textContent = '생년월일을 먼저 입력하세요.'; return; }
+    var p = v.split('-'), by = +p[0], bm = +p[1], bd = +p[2];
+    var d = new Date(by + 62, bm - 1, bd - 1);   // 62세에 이르는 날(생일 전날)
+    var mm = d.getMonth() + 1, yy = d.getFullYear(), ry, rm;
+    if (mm >= 3 && mm <= 8) { ry = yy; rm = 8; }
+    else if (mm >= 9) { ry = yy + 1; rm = 2; }
+    else { ry = yy; rm = 2; }
+    if (ry < 2027 || ry > 2045) { $('birthMsg').textContent = '계산된 정년퇴직일(' + ry + '. ' + rm + '. ' + lastDay(ry, rm) + '.)이 선택 범위를 벗어납니다.'; return; }
+    ySel.value = ry; $('rh').value = rm;
+    $('birthMsg').textContent = '정년퇴직일 ' + ry + '. ' + rm + '. ' + lastDay(ry, rm) + '.을 적용했습니다. 인사기록·정년 조견표로 꼭 확인하세요.';
+    render();
+  });
+
+  // ---- 비교 목록 ----
+  var list = [];
+  function renderList() {
+    var body = $('listBody');
+    body.innerHTML = list.map(function(r, i){
+      return '<tr><td>' + stepLabel(r.step) + '</td><td>' + r.dateStr + '</td><td class="num">' + r.months +
+        (r.tier === 3 ? ' <span class="muted">(상한)</span>' : '') + '</td><td class="num">' + fmtMult(r.mult) +
+        '</td><td class="num"><b>' + won(r.total) + '</b></td><td class="no-print"><button class="x" data-i="' + i + '" title="삭제">✕</button></td></tr>';
+    }).join('');
+    $('listCard').classList.toggle('hidden', list.length === 0);
+  }
+  $('saveBtn').addEventListener('click', function(){
+    if (!current || current.tier === 0) return;
+    list.unshift(Object.assign({}, current));
+    renderList();
+    this.textContent = '담았습니다'; this.disabled = true;
+  });
+  $('listBody').addEventListener('click', function(e){
+    var b = e.target.closest('button.x'); if (!b) return;
+    list.splice(+b.dataset.i, 1); renderList();
+  });
+  $('clearBtn').addEventListener('click', function(){ list = []; renderList(); });
+
+  // ---- 복사 ----
+  $('copyBtn').addEventListener('click', function(){
+    if (!current || !current.formText) return;
+    var btn = this, txt = current.formText;
+    var done = function(){ btn.textContent = '복사됨'; setTimeout(function(){ btn.textContent = '산출내용 복사'; }, 1500); };
+    try {
+      navigator.clipboard.writeText(txt).then(done, fallback);
+    } catch (e) { fallback(); }
+    function fallback(){
+      var ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta); ta.select();
+      try { document.execCommand('copy'); done(); } catch (e2) {}
+      document.body.removeChild(ta);
+    }
+  });
+
+  // ---- 탭 ----
+  Array.prototype.forEach.call(document.querySelectorAll('.tab'), function(t){
+    t.addEventListener('click', function(){
+      document.querySelectorAll('.tab').forEach(function(x){ x.classList.toggle('on', x === t); });
+      $('tab-calc').classList.toggle('hidden', t.dataset.tab !== 'calc');
+      $('tab-guide').classList.toggle('hidden', t.dataset.tab !== 'guide');
+    });
+  });
+
+  ['step', 'ry', 'rh', 'sy', 'sm'].forEach(function(id){
+    $(id).addEventListener('change', render);
+    $(id).addEventListener('input', render);
+  });
+
+  // 검증용 노출 (콘솔에서 확인 가능)
+  window.__mpCompute = compute;
+  render();
+})();
+</script>
 </body>
 </html>
